@@ -12,8 +12,8 @@ source('TSHT-ldim.R', encoding = 'UTF-8')
 ```
 
 ### Generate the design covariance matrix
-## simulate A1 of the matrix (rho)^|i-j|
 ```R
+# simulate A1 of the matrix (rho)^|i-j|
 A1gen<-function(rho,p){
   A1=matrix(0,p,p)
   for(i in 1:p){
@@ -25,13 +25,13 @@ A1gen<-function(rho,p){
 }
 ```
 ### Set the model parameter
+```R
 # n: sample size
 # IV.str: individual IV strength
 # VIO.str: violation strength
 # beta:   true treatment effect (set at 1)
 # px:number of covariates
 # L: number of candiate IVs
-```R
 n = 500;
 IV.str=0.5;
 VIO.str=0.4;
@@ -68,11 +68,11 @@ boot.value=TRUE
 
 
 ### Generate the data
+```R
 # Y: n by 1 vector of outcomes (must be continuous)
 # D: n by 1 vector of treatments (continuous or discrete)
 # Z: n by L matrix of instruments (continuous or discrete)
 # X: n by px matrix of baseline covariates (continuous or discrete)
-```R
 W<-mvrnorm(n, rep(0, p), Cov)
 Z=W[,1:L]
 X=W[,(L+1):p]
