@@ -85,43 +85,42 @@ Y = -0.5 + Z %*% alpha + D * beta + X%*%phi+ epsilon[,2]
 ### Compute the reduced form estimaors with the corresponding covariance 
 ```R
 pz<-ncol(Z)
-  W = cbind(W,1)
-  # Compute covariance of W and W %*% U
-  covW = t(W) %*% W /n #this should automatically turn covW into a matrix
-  WUMat = W %*% (solve(covW))[,1:pz]
-  qrW = qr(W)
-  ITT_Y = qr.coef(qrW,Y)[1:pz]
-  ITT_D = qr.coef(qrW,D)[1:pz]
-  SigmaSqY = sum(qr.resid(qrW,Y)^2)/(n -p-1)
-  SigmaSqD = sum(qr.resid(qrW,D)^2)/(n -p-1)
-  SigmaYD = sum(qr.resid(qrW,Y) * qr.resid(qrW,D)) / (n - p-1)
-  ######## select strongly associated IV
-  #Tn<-sqrt(log(n)) ### this can be modified by the user
-  #SE.norm<-(diag(solve(covW)/n)^{1/2})[1:pz]
-  #Shat<-(abs(ITT_D)>Tn*sqrt(SigmaSqD)*SE.norm)
-  Tn<-min(cut.off.IVStr(SigmaSqD,WUMat,pz),sqrt(log(n))) ### this can be modified by the user
-  SE.norm<-(diag(solve(covW)/n)^{1/2})[1:pz]
-  Shat<-(abs(ITT_D)>Tn*sqrt(SigmaSqD)*SE.norm)
+W = cbind(W,1)
+# Compute covariance of W and W %*% U
+covW = t(W) %*% W /n #this should automatically turn covW into a matrix
+WUMat = W %*% (solve(covW))[,1:pz]
+qrW = qr(W)
+ITT_Y = qr.coef(qrW,Y)[1:pz]
+ITT_D = qr.coef(qrW,D)[1:pz]
+SigmaSqY = sum(qr.resid(qrW,Y)^2)/(n -p-1)
+SigmaSqD = sum(qr.resid(qrW,D)^2)/(n -p-1)
+SigmaYD = sum(qr.resid(qrW,Y) * qr.resid(qrW,D)) / (n - p-1)
+######## select strongly associated IV
+#Tn<-sqrt(log(n)) ### this can be modified by the user
+#SE.norm<-(diag(solve(covW)/n)^{1/2})[1:pz]
+#Shat<-(abs(ITT_D)>Tn*sqrt(SigmaSqD)*SE.norm)
+Tn<-min(cut.off.IVStr(SigmaSqD,WUMat,pz),sqrt(log(n))) ### this can be modified by the user
+SE.norm<-(diag(solve(covW)/n)^{1/2})[1:pz]
+Shat<-(abs(ITT_D)>Tn*sqrt(SigmaSqD)*SE.norm)
 ```
 
 
 ### screen out strongly invalid IVs and retain a set of valid and weakly invalid IVs 
 ```R
-  timestart = Sys.time()
-  V0.hat<-TSHT.Initial(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD)$VHat
-  V0.hat<-sort(V0.hat)
+V0.hat<-TSHT.Initial(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD)$VHat
+V0.hat<-sort(V0.hat)
 ```
 
 ### construct the initial range [L,U]  
 ```R
-  temp<-(SigmaSqY)/(ITT_D[V0.hat]^2)+SigmaSqD*(ITT_Y[V0.hat]^2)/(ITT_D[V0.hat]^4)-2*SigmaYD*(ITT_Y[V0.hat])/(ITT_D[V0.hat]^3)
-  var.beta<-(diag(solve(covW)/n)[1:pz])[V0.hat]*temp
-  CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
-  CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
-  CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
-  uni<- Intervals(CI.initial)
-  CI.initial.union<-as.matrix(interval_union(uni))
-  beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
+temp<-(SigmaSqY)/(ITT_D[V0.hat]^2)+SigmaSqD*(ITT_Y[V0.hat]^2)/(ITT_D[V0.hat]^4)-2*SigmaYD*(ITT_Y[V0.hat])/(ITT_D[V0.hat]^3)
+var.beta<-(diag(solve(covW)/n)[1:pz])[V0.hat]*temp
+CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
+CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
+CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
+uni<- Intervals(CI.initial)
+CI.initial.union<-as.matrix(interval_union(uni))
+beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
 ```
 
 ### conduct the initial searching and output a refined range [L,U]
@@ -130,4 +129,16 @@ pz<-ncol(Z)
 CI.sea<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,WUMat,beta.grid=beta.grid.seq,bootstrap=FALSE)
 CI.temp<-CI.sea$CI.search
 beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
+```
+
+### conduct the refined searching 
+```R
+CI.sea.refined<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,WUMat,beta.grid,bootstrap=boot.value)
+CI.temp<-CI.sea.refined$CI.search
+``` 
+### conduct the refined sampling
+
+```R
+CI.sampling<-Searching.CI.Sampling(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,WUMat,beta.grid,M=M0,bootstrap=boot.value)
+CI.temp<-c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))
 ```
