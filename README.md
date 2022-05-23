@@ -1,3 +1,6 @@
+This repo contains all final versions of simulations and Rworkspace. 
+Note that the source codes are only used for internal simulations and are not polished well to the latest version.
+
 # Explanations On Simulations
 
 ## Main Settings
@@ -23,3 +26,8 @@ one.
 3. simu_CIIV.R: investigates SearchingSampling on settings CIIV-1 and CIIV-2
 4. simu_threshold_S2.R: computes the $max_{T_{j,k}}$ for setting S2
 5. homo_S2_hists.R: get point estimators of TSHT and CIIV method for setting S2, prepared for later histograms
+
+## Summary & RDatas
+1. summary.R: For each task, it reads the relevant RDatas and either outputs latex tables or figures as demanded.
+2. RDatas: the file contains all Rworkspace.
+
